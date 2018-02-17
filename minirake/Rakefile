@@ -1,0 +1,6 @@
+task default: [:hello]
+
+desc "Default"
+task :hello do
+  puts "Hello, MiniRake"
+end
