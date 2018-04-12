@@ -15,13 +15,32 @@ class Env < Hash
   def set(name, value) key?(name) ? store(name, value) : @outer.set(name, value)  end
 end
 
+def arch_op(op, left, right)
+  if (right.empty?)
+    return 0.send(op, left)
+  end
+
+  [left, *right].inject{|sum, e| sum.send(op, e)}
+end
+
 def add_globals(env)
   ops = [:+, :-, :*, :/, :>, :<, :>=, :<=, :==]
   ops.each{|op|  env[op] = lambda{|a, b| a.send(op, b)}}
-  env.update({ :length => lambda{|x| x.length}, :cons => lambda{|x, y| [x]+y},
-  :car => lambda{|x| x[0]}, :cdr => lambda{|x| x[1..-1]}, :append => lambda{|x,y| x+y},
-  :list => lambda{|*xs| xs}, :list? => lambda{|x| x.is_a? Array}, :null? => lambda{|x| x==nil},
-  :symbol? => lambda{|x| x.is_a? Symbol}, :not => lambda{|x| !x}, :display => lambda{|x| p x}})
+  env.update({
+    :+ => lambda {|x, *y| arch_op(:+, x, y)},
+    :- => lambda {|x, *y| arch_op(:-, x, y)},
+    :length => lambda{|x| x.length},
+    :cons => lambda{|x, y| [x]+y},
+    :car => lambda{|x| x[0]},
+    :cdr => lambda{|x| x[1..-1]},
+    :append => lambda{|x,y| x+y},
+    :list => lambda{|*xs| xs},
+    :list? => lambda{|x| x.is_a? Array},
+    :null? => lambda{|x| x==nil},
+    :symbol? => lambda{|x| x.is_a? Symbol},
+    :not => lambda{|x| !x},
+    :display => lambda{|x| p x}
+  })
 end
 
 def eval(x, env)
